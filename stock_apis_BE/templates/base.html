@@ -1,0 +1,152 @@
+{% load stock_api_extras %}
+<!DOCTYPE html>
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;600&display=swap" rel="stylesheet">
+<head>
+    <meta charset="UTF-8">
+    <title>Last News</title>
+    <style type="text/css">
+    .news-list {
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        font-family: 'Raleway', sans-serif;
+    }
+
+    .news {
+        width: 100%;
+        padding: 0 0 0 10px;
+        margin: 0 0 10px;
+        position: relative;
+    }
+
+    .news:before {
+        content: "";
+        width: 5px;
+        height: 100%;
+        display: block;
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        background-color: #7612C8;
+    }
+
+    .news-section-type {
+        font-weight: bold;
+        font-size: 20px;
+        color: #444444;
+        margin: 0;
+        padding-bottom: 15px;
+    }
+
+    .news-section {
+        font-size: 16px;
+        color: #425466;
+        margin: 0;
+        padding-bottom: 10px;
+    }
+
+    .news-section-type:last-child {
+        padding-bottom: 0;
+    }
+
+    .news-section.categories {
+        list-style: square outside;
+        padding-left: 0px;
+        margin: 0;
+        display: flex;
+    }
+
+    .news-section.url {
+        text-decoration: none;
+        color: blue;
+        display: block;
+    }
+
+    .news-section.url:hover {
+        text-decoration: underline;
+    }
+
+    .news-category {
+        display: inline-block;
+        border-right: #425466 solid 2px;
+        padding: 0 5px;
+        font-size: 16px;
+    }
+
+    .news-category:first-child {
+        padding-left: 0;
+    }
+
+    .news-category:last-child {
+        border-right: none;
+    }
+
+    .news-time {
+        font-size: 16px;
+        color: #767676;
+    }
+    </style>
+</head>
+
+<body>
+    <ul class="news-list">
+        {% for art in articles %}
+        <li class="news">
+            <p class="news-section-type">Title:</p>
+            <p class="news-section title">{{ art.title }}</p>
+            <p class="news-section-type">Categories:</p>
+            <ul class="news-section categories">
+                {% for cat in art.categories %}
+                <li class="news-category" style="color: {{ colors|get_item:cat }}">{{ cat }}</li>
+                {% endfor %}
+            </ul>
+            <p class="news-section-type">Description:</p>
+            <p class="news-section descriprion">{{ art.description }}</p>
+            <p class="news-section-type">Url:</p>
+            <a class="news-section url" href="{{ art.url }}">{{ art.url }}</a>
+            <p class="news-section-type">Published: <time class="news-time" datetime="{{ art.published_str }}"></time></p>
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+
+<script type="text/javascript">
+function timeSince(date) {
+
+    var seconds = Math.floor((new Date() - date) / 1000);
+
+    var interval = seconds / 31536000;
+
+    if (interval > 1) {
+        return Math.floor(interval) + " years";
+    }
+    interval = seconds / 2592000;
+    if (interval > 1) {
+        return Math.floor(interval) + " months";
+    }
+    interval = seconds / 86400;
+    if (interval > 1) {
+        return Math.floor(interval) + " days";
+    }
+    interval = seconds / 3600;
+    if (interval > 1) {
+        return Math.floor(interval) + " hours";
+    }
+    interval = seconds / 60;
+    if (interval > 1) {
+        return Math.floor(interval) + " minutes";
+    }
+    return Math.floor(seconds) + " seconds";
+}
+
+let timeList = document.getElementsByClassName('news-time')
+for (let timeEl in timeList) {
+    console.log(timeSince(new Date(timeList[timeEl].dateTime)))
+    timeList[timeEl].innerHTML = timeSince(new Date(timeList[timeEl].dateTime)) + ' ago'
+}
+</script>
+
+</html>
