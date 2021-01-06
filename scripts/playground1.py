@@ -23,8 +23,17 @@ django.setup()
 
 from stock_apis_BE.models import Article
 
-queryset = Article.objects.all().order_by('published')
+queryset = Article.objects.all().order_by('id')
 
+quant = 0 #number of articles with no publication date
+
+for query in queryset:
+    if query.published_str == 'No publication date':
+        quant += 1
+
+print("Total percentage of no date art-s:" + ' ' + str(100*quant/len(queryset)))
+print(len(queryset))
+'''
 last = '10000'
 ids = []
 for query in list(queryset[:int(last)]):
@@ -39,7 +48,7 @@ print(len(queryset))
 category = 'bitcoin'
 
 res_queryset = Article.objects.none()
-
+'''
 '''
 if category is not None:
 
@@ -65,6 +74,7 @@ if category is not None:
     queryset = res_queryset.distinct()
 
 '''
+'''
 print(len(queryset))
 
 #articles = json.loads\
@@ -77,7 +87,7 @@ text = requests.get('http://127.0.0.1:8000/articles/?last=10').text
 
 with open('list.html', 'w') as f:
     f.write(text)
-
+'''
 '''
 for query in list(Article.objects.all()[:10]):
     ids.append(query.id)
@@ -89,6 +99,7 @@ for art in articles:
         print(cat.name)
 '''
 
+'''
 for art in Article.objects.all().order_by('-published'):
     temp = art.description.replace('b"', '')
     temp = temp.replace('b\'', '')
@@ -101,3 +112,4 @@ for art in Article.objects.all().order_by('-published'):
     else:
         art.description = ''
     art.save()
+'''

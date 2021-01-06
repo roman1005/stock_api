@@ -41,6 +41,6 @@ class Article(models.Model):
     source = models.CharField(max_length=200, default="No source")
 
     def __str__(self):
-        return self.title
+        return self.title + ' ' + self.published_str
 
 
