@@ -1,4 +1,7 @@
 from django.contrib import admin
+from rest_framework import permissions
+from stock_apis.settings import REST_SAFE_LIST_IPS
+
 from .models import Article, Category
 
 @admin.register(Article)
@@ -22,4 +25,19 @@ class ArticleAdmin(admin.ModelAdmin):
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     search_fields = ('name',)
+
+class SafelistPermission(permissions.BasePermission):
+    """
+    Ensure the request's IP address is on the safe list configured in Django settings.
+    """
+
+    def has_permission(self, request, view):
+
+        remote_addr = request.META['REMOTE_ADDR']
+
+        for valid_ip in REST_SAFE_LIST_IPS:
+            if remote_addr == valid_ip or remote_addr.startswith(valid_ip):
+                return True
+
+        return False
 # Register your models here.
