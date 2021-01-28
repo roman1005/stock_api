@@ -20,7 +20,13 @@ class ArticleList(APIView):
 
     def get(self, request):
 
-        if self.request.query_params.get('X-RapidAPI-Proxy-Secret') != '856ff040-597a-11eb-80b9-8b2f9f555d46':
+        headers = request.headers
+
+
+        try:
+            if headers['X-RapidAPI-Proxy-Secret'] != '856ff040-597a-11eb-80b9-8b2f9f555d46':
+                raise Exception("Invalid credentials were provided.")
+        except KeyError:
             raise Exception("Invalid credentials were provided.")
 
         remote_addr = request.META['REMOTE_ADDR']
