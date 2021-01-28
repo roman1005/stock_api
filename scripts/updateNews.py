@@ -232,7 +232,7 @@ for art in Article.objects.all().order_by('-published'):
 
 
 while True:
-
+    '''
     queryset = Article.objects.all().order_by('id')
 
     if len(queryset) > 9000:
@@ -240,6 +240,7 @@ while True:
 
         for query in queryset[:to_delete]:
             query.delete()
+    '''
 
     for website in sources['crypto']:
         print(website.upper())
