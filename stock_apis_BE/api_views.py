@@ -22,7 +22,6 @@ class ArticleList(APIView):
 
         headers = request.headers
 
-
         try:
             if headers['X-RapidAPI-Proxy-Secret'] != '856ff040-597a-11eb-80b9-8b2f9f555d46':
                 raise Exception("Invalid credentials were provided.")
@@ -31,12 +30,14 @@ class ArticleList(APIView):
 
         remote_addr = request.META['REMOTE_ADDR']
 
+        '''
         for valid_ip in settings.REST_SAFE_LIST_IPS:
 
             if remote_addr == valid_ip or remote_addr.startswith(valid_ip):
                 break
             else:
                 raise Exception("Not verified IP.")
+        '''
 
         queryset = Article.objects.all().order_by('-published')
 
