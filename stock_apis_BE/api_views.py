@@ -1,6 +1,7 @@
 import json
 import os
 
+from stock_apis import settings
 from .categories_aliases import categories_aliases
 import feedparser
 import requests
@@ -18,6 +19,18 @@ from string import capwords
 class ArticleList(APIView):
 
     def get(self, request):
+
+        if self.request.query_params.get('X-RapidAPI-Proxy-Secret') != '856ff040-597a-11eb-80b9-8b2f9f555d46':
+            raise Exception("Invalid credentials were provided.")
+
+        remote_addr = request.META['REMOTE_ADDR']
+
+        for valid_ip in settings.REST_SAFE_LIST_IPS:
+
+            if remote_addr == valid_ip or remote_addr.startswith(valid_ip):
+                break
+            else:
+                raise Exception("Not verified IP.")
 
         queryset = Article.objects.all().order_by('-published')
 
@@ -60,7 +73,7 @@ class ArticleList(APIView):
                 queryset = queryset.filter(published__gte=from_date)
 
             except parser._parser.ParserError:
-                return JsonResponse({"from": "Incorrect data format was inputted"})
+                raise Exception("Incorrect data format was inputted")
 
         if to_date_str is not None:
 
@@ -69,7 +82,7 @@ class ArticleList(APIView):
                 queryset = queryset.filter(published__lte=to_date)
 
             except parser._parser.ParserError:
-                return JsonResponse({"to": "Incorrect data format was inputted"})
+                raise Exception("Incorrect data format was inputted")
 
         last = self.request.query_params.get('last', None)
 
@@ -83,8 +96,7 @@ class ArticleList(APIView):
 
 
             except:
-                return JsonResponse(
-                    {"last": "Incorrect parameter value - you should enter only positive integer numbers."})
+                raise Exception("Incorrect parameter value - you should enter only positive integer numbers.")
 
         serializer = ArticleSerializer(queryset, many=True)
 

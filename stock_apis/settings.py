@@ -55,7 +55,6 @@ INSTALLED_APPS = [
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
-        'stock_apis_BE.admin.SafelistPermission'
     ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.SessionAuthentication',
@@ -64,6 +63,7 @@ REST_FRAMEWORK = {
 }
 
 REST_SAFE_LIST_IPS = [
+    '127.0.0.1',
     '107.23.255.128',
     '107.23.255.129',
     '107.23.255.131',
@@ -136,6 +136,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.common.CommonMiddleware',
 ]
 
 ROOT_URLCONF = 'stock_apis.urls'
@@ -172,7 +173,6 @@ DATABASES = {
         'PORT': '3306',
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
