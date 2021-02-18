@@ -137,6 +137,9 @@ class ArticleList(APIView):
 
         return result.distinct()
 
+    def make_forms(self, word):
+        return [word.lower(), word.upper(), capwords(word)]
+
     def get_queryset(self, result):
 
         if result is None:
@@ -157,7 +160,7 @@ class ArticleList(APIView):
 
         return queryset.distinct().order_by('-published')
 
-    def get_by_sources(self, sources):
+    def get_by_sources(self, sources, procedure):
         if sources is not None:
             source_list = sources.split(',')
             for i, source in enumerate(source_list):
@@ -172,7 +175,42 @@ class ArticleList(APIView):
                     raise Exception('Source ' + source + ' is not an provided source.' )
 
             return temp_queryset.distinct()
-        else:
+        elif procedure == 'include':
+            return Article.objects.all().distinct()
+        elif procedure == 'exclude':
+            return Article.objects.none()
+
+    def search_by_words(self, words, field='title', procedure='include'):
+        if words is not None:
+            word_list = words.split(',')
+            for i, source in enumerate(word_list):
+                word_list[i] = source.replace(' ', '')
+
+            if procedure == 'include':
+                temp_queryset = Article.objects.all()
+                for word in word_list:
+                    temp_temp_queryset = Article.objects.none()
+
+                    for word_form in self.make_forms(word):
+                        if field == 'title' and procedure == 'include':
+                            temp_temp_queryset = temp_temp_queryset | Article.objects.filter(title__contains=word_form)
+                        elif field == 'description' and procedure == 'include':
+                            temp_temp_queryset = temp_temp_queryset | Article.objects.filter(description__contains=word_form)
+                    temp_queryset = temp_queryset & temp_temp_queryset
+
+            elif procedure == 'exclude':
+                temp_queryset = Article.objects.none()
+                for word in word_list:
+                    for word_form in self.make_forms(word):
+                        if field == 'title':
+                            temp_queryset = temp_queryset | Article.objects.filter(title__contains=word_form)
+                        elif field == 'description':
+                            temp_queryset = temp_queryset | Article.objects.filter(description__contains=word_form)
+
+            return temp_queryset.distinct()
+        elif procedure == 'include':
+            return Article.objects.all().distinct()
+        elif procedure == 'exclude':
             return Article.objects.none()
 
     def get(self, request):
@@ -196,7 +234,7 @@ class ArticleList(APIView):
         '''
 
         category = self.request.query_params.get('category', None)
-        queryset = Article.objects.none()
+        queryset = Article.objects.all()
 
         if category is not None:
             queryset = self.get_queryset(self.convert_to_list(category))
@@ -225,19 +263,28 @@ class ArticleList(APIView):
                 raise Exception("Incorrect data format was inputted")
 
 
-        sources = self.request.query_params.get('include_sources', None)
-        #source_list = []
+        sources = self.request.query_params.get('includeSources', None)
+        queryset = queryset.distinct() & self.get_by_sources(sources, 'include')
 
-        queryset = queryset.distinct() & self.get_by_sources(sources)
+        sources = self.request.query_params.get('excludeSources', None)
+        exclude_sources_queryset = self.get_by_sources(sources, 'exclude')
+        queryset = queryset.distinct() & Article.objects.exclude(pk__in=exclude_sources_queryset.values_list('pk', flat=True)).distinct()
 
-        sources = self.request.query_params.get('exclude_sources', None)
+        include_words_title = self.request.query_params.get('includeWordsTitle', None)
+        queryset = queryset.distinct() & self.search_by_words(include_words_title, 'title', 'include')
 
-        exclude_queryset = self.get_by_sources(sources)
+        exclude_words_title = self.request.query_params.get('excludeWordsTitle', None)
+        exclude_words_queryset = self.search_by_words(exclude_words_title, 'title', 'exclude')
+        queryset = queryset.distinct() & Article.objects.exclude(pk__in=exclude_words_queryset.values_list('pk', flat=True)).distinct()
 
-        queryset = queryset.distinct() & Article.objects.exclude(pk__in=exclude_queryset.values_list('pk', flat=True)).distinct()
+        include_words_title = self.request.query_params.get('includeWordsDescription', None)
+        queryset = queryset.distinct() & self.search_by_words(include_words_title, 'description', 'include')
+
+        exclude_words_title = self.request.query_params.get('excludeWordsDescription', None)
+        exclude_words_queryset = self.search_by_words(exclude_words_title, 'description', 'exclude')
+        queryset = queryset.distinct() & Article.objects.exclude(pk__in=exclude_words_queryset.values_list('pk', flat=True)).distinct()
 
         last = self.request.query_params.get('last', None)
-
         if last is not None:
             try:
                 ids = []
@@ -246,7 +293,7 @@ class ArticleList(APIView):
 
                 queryset = Article.objects.filter(id__in=ids).order_by('-published')
 
-            except:
+            except IndexError:
                 raise Exception("Incorrect parameter value - you should enter only positive integer numbers.")
 
         serializer = ArticleSerializer(queryset.order_by('-published'), many=True)

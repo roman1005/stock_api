@@ -1,8 +1,21 @@
 from django.contrib import admin
-from rest_framework import permissions
-from stock_apis.settings import REST_SAFE_LIST_IPS
-
 from .models import Article, Category
+from django.db import models
+
+'''
+class Search(models.Lookup):
+    lookup_name = 'search'
+
+    def as_mysql(self, compiler, connection):
+        lhs, lhs_params = self.process_lhs(compiler, connection)
+        rhs, rhs_params = self.process_rhs(compiler, connection)
+        params = lhs_params + rhs_params
+        return 'MATCH (%s) AGAINST (%s IN BOOLEAN MODE)' % (lhs, rhs), params
+
+
+models.CharField.register_lookup(Search)
+models.TextField.register_lookup(Search)
+'''
 
 @admin.register(Article)
 class ArticleAdmin(admin.ModelAdmin):
@@ -26,18 +39,5 @@ class ArticleAdmin(admin.ModelAdmin):
 class CategoryAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
-class SafelistPermission(permissions.BasePermission):
-    """
-    Ensure the request's IP address is on the safe list configured in Django settings.
-    """
 
-    def has_permission(self, request, view):
-
-        remote_addr = request.META['REMOTE_ADDR']
-
-        for valid_ip in REST_SAFE_LIST_IPS:
-            if remote_addr == valid_ip or remote_addr.startswith(valid_ip):
-                return True
-
-        return False
 # Register your models here.
