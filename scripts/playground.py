@@ -95,6 +95,7 @@ def convert_to_list(stri1):
         error_msg = error_msg.replace('~', 'NOT')
         #error_msg = error_msg.replace('NOT', '~')
         print(error_msg)
+        return ParseError(error_msg)
 
 
 def get_articles(query):

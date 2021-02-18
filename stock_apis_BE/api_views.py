@@ -18,6 +18,7 @@ from string import capwords
 from pyeda.boolalg import expr
 from pyeda.parsing.boolexpr import Error as ParseError
 from string import capwords
+from scripts.sources import shortname_sources
 
 
 class ArticleList(APIView):
@@ -97,6 +98,7 @@ class ArticleList(APIView):
             error_msg = error_msg.replace('~', 'NOT')
             # error_msg = error_msg.replace('NOT', '~')
             print(error_msg)
+            raise ParseError(error_msg)
 
     def get_articles(self, query):
 
@@ -155,6 +157,24 @@ class ArticleList(APIView):
 
         return queryset.distinct().order_by('-published')
 
+    def get_by_sources(self, sources):
+        if sources is not None:
+            source_list = sources.split(',')
+            for i, source in enumerate(source_list):
+                source_list[i] = source.replace(' ', '')
+
+            temp_queryset = Article.objects.none()
+
+            for source in source_list:
+                try:
+                    temp_queryset = temp_queryset | Article.objects.filter(source=shortname_sources[source])
+                except KeyError:
+                    raise Exception('Source ' + source + ' is not an provided source.' )
+
+            return temp_queryset.distinct()
+        else:
+            return Article.objects.none()
+
     def get(self, request):
 
         headers = request.headers
@@ -204,6 +224,18 @@ class ArticleList(APIView):
             except parser._parser.ParserError:
                 raise Exception("Incorrect data format was inputted")
 
+
+        sources = self.request.query_params.get('include_sources', None)
+        #source_list = []
+
+        queryset = queryset.distinct() & self.get_by_sources(sources)
+
+        sources = self.request.query_params.get('exclude_sources', None)
+
+        exclude_queryset = self.get_by_sources(sources)
+
+        queryset = queryset.distinct() & Article.objects.exclude(pk__in=exclude_queryset.values_list('pk', flat=True)).distinct()
+
         last = self.request.query_params.get('last', None)
 
         if last is not None:
@@ -213,7 +245,6 @@ class ArticleList(APIView):
                     ids.append(query.id)
 
                 queryset = Article.objects.filter(id__in=ids).order_by('-published')
-
 
             except:
                 raise Exception("Incorrect parameter value - you should enter only positive integer numbers.")

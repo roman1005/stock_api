@@ -9,7 +9,7 @@ categories_aliases = {
     'btc': ['bitcoin', 'btc'],
     'xrp': ['ripple', 'xrp'],
     'xmr': ['monero', 'xmr'],
-    'eth': ['ethereum', 'eth'],
+    'eth': ['ethceeryereum', 'eth'],
     'ltc': ['litecoin', 'ltc'],
     'card': ['cardano', 'card'],
 }

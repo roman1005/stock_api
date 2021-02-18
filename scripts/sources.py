@@ -13,3 +13,24 @@ sources = {'crypto':['https://decryptmedia.com/', 'http://coindesk.com/', 'https
             #'https://bitrates.com/',
             'https://hackernoon.com/', 'https://cryptodaily.co.uk/', 'https://www.koinalert.com/',
             'https://bitcoinmagazine.com/']}
+
+shortname_sources = {'decryptmedia': 'https://decryptmedia.com/', 'coindesk': 'http://coindesk.com/',
+                  'cryptonomist': 'https://en.cryptonomist.ch/', 'ambcrypto': 'https://ambcrypto.com/',
+                  'tokenhell': 'https://tokenhell.com/', 'insidebitcoins': 'https://insidebitcoins.com/',
+                  'bitcoinist': 'https://bitcoinist.com/', 'cryptopotato': 'https://cryptopotato.com/',
+                  'coinfomania': 'https://coinfomania.com/', 'coinjournal': 'http://coinjournal.net/',
+                  'btcmanager': 'https://btcmanager.com/', 'coingeek': 'https://coingeek.com/',
+                  'cryptopolitan': 'https://www.cryptopolitan.com/', 'cryptonews': 'https://cryptonews.com/news/',
+                  'ihodl': 'https://ihodl.com/feed/default/', 'oracletimes': 'https://oracletimes.com/',
+                  'news.bitcoin': 'https://news.bitcoin.com/', 'cointelegraph': 'https://cointelegraph.com/',
+                  'beincrypto': 'https://beincrypto.com/', 'cryptobriefing': 'https://cryptobriefing.com/',
+                  'coinpedia': 'https://coinpedia.org/', 'coinnounce': 'https://coinnounce.com/',
+                  'coindoo': 'https://coindoo.com/', 'thecurrencyanalytics': 'https://thecurrencyanalytics.com/',
+                  'kryptomoney': 'http://feeds.feedburner.com/kryptomoney', 'ourbitcoinnews': 'https://ourbitcoinnews.com/',
+                  'blokt': 'https://blokt.com/', 'cryptoslate': 'https://cryptoslate.com/', 'newsbtc': 'http://www.newsbtc.com/',
+                  'usethebitcoin': 'https://usethebitcoin.com/', 'coingape': 'https://coingape.com/', 'altcoinbuzz.io/':
+                  'https://altcoinbuzz.io/', 'thetokenist': 'https://thetokenist.io/',
+                  'financemagnates': 'https://www.financemagnates.com/',
+                  'zycrypto': 'https://zycrypto.com/', 'hackernoon': 'https://hackernoon.com/', 'cryptodaily':
+                  'https://cryptodaily.co.uk/', 'koinalert': 'https://www.koinalert.com/',
+                  'bitcoinmagazine': 'https://bitcoinmagazine.com/'}
