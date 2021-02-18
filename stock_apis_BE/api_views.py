@@ -296,9 +296,19 @@ class ArticleList(APIView):
             except IndexError:
                 raise Exception("Incorrect parameter value - you should enter only positive integer numbers.")
 
-        serializer = ArticleSerializer(queryset.order_by('-published'), many=True)
+        order_by = self.request.query_params.get('orderBy', None)
 
-        return JsonResponse({"results": len(queryset), "articles": serializer.data})
+        if order_by is None:
+            serializer = ArticleSerializer(queryset.order_by('-published'), many=True)
+            return JsonResponse({"results": len(queryset), "articles": serializer.data})
+        else:
+            try:
+                serializer = ArticleSerializer(queryset.order_by(order_by), many=True)
+                return JsonResponse({"results": len(queryset), "articles": serializer.data})
+            except Exception as er:
+                raise Exception(er)
+
+
 
 
 def articles_html(request):
