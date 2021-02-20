@@ -316,6 +316,11 @@ class ArticleList(APIView):
                 raise Exception("Incorrect parameter value - you should enter only positive integer numbers.")
 
             queryset = Article.objects.filter(id__in=ids).order_by('-published')
+        else:
+            ids = []
+            for query in queryset.order_by('-published')[:30]:
+                ids.append(query.id)
+            queryset = Article.objects.filter(id__in=ids).order_by('-published')
 
         order_by = self.request.query_params.get('orderBy', None)
 
