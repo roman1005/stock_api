@@ -227,12 +227,13 @@ class ArticleList(APIView):
 
         headers = request.headers
 
+        '''
         try:
             if headers['X-RapidAPI-Proxy-Secret'] != '856ff040-597a-11eb-80b9-8b2f9f555d46':
                 raise Exception("Invalid credentials were provided.")
         except KeyError:
             raise Exception("Invalid credentials were provided.")
-
+        '''
         '''
         remote_addr = request.META['REMOTE_ADDR']
         for valid_ip in settings.REST_SAFE_LIST_IPS:
@@ -302,14 +303,19 @@ class ArticleList(APIView):
 
         if last is not None:
             try:
-                ids = []
-                for query in queryset.order_by('-published')[:int(last)]:
-                    ids.append(query.id)
-
-                queryset = Article.objects.filter(id__in=ids).order_by('-published')
-
-            except IndexError:
+                int_last = int(last)
+                if str(int_last) != last:
+                    raise Exception("Incorrect parameter value - you should enter only positive integer numbers.")
+            except ValueError:
                 raise Exception("Incorrect parameter value - you should enter only positive integer numbers.")
+            try:
+                ids = []
+                for query in queryset.order_by('-published')[:(min(int(last),100))]:
+                    ids.append(query.id)
+            except AssertionError:
+                raise Exception("Incorrect parameter value - you should enter only positive integer numbers.")
+
+            queryset = Article.objects.filter(id__in=ids).order_by('-published')
 
         order_by = self.request.query_params.get('orderBy', None)
 
@@ -329,12 +335,13 @@ class SourceList(APIView):
     def get(self, request):
 
         headers = request.headers
-
+        '''
         try:
             if headers['X-RapidAPI-Proxy-Secret'] != '856ff040-597a-11eb-80b9-8b2f9f555d46':
                 raise Exception("Invalid credentials were provided.")
         except KeyError:
             raise Exception("Invalid credentials were provided.")
+        '''
 
         return JsonResponse(shortname_sources)
 

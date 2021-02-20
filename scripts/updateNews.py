@@ -1,3 +1,4 @@
+import urllib.error as er
 from scripts.sources import sources, languages
 import feedparser
 from dateutil import parser
@@ -161,39 +162,37 @@ def create_article(entry, website, lan):
         print(description)
         assert False
 
+
 def check_for_updates(website):
 
-    feed = feedparser.parse(website + 'rss')
-
-    if len(feed.entries) == 0:
-        feed = feedparser.parse(website + 'feed')
-
-    if 'feed' in website:
+    try:
         feed = feedparser.parse(website)
+        last_links[website] = feed.entries
 
-    last_links[website] = feed.entries
+        for entry in last_links[website]:
 
-    new_articles = 0
-
-    for entry in last_links[website]:
-
-        try:
-            Article.objects.get(title=entry['title'])
-
-        except Article.DoesNotExist:
-            print("New article: " + entry['title'])
             try:
-                lan = languages[feed['feed']['language']]
+                Article.objects.get(title=entry['title'])
+
+            except Article.DoesNotExist:
+                print("New article: " + entry['title'])
+                try:
+                    lan = languages[feed['feed']['language']]
 
 
-            except KeyError:
-                lan = 'en'
+                except KeyError:
+                    lan = 'en'
 
-            create_article(entry, website, lan)
+                create_article(entry, website, lan)
 
 
-        except Exception as e:
-            print(e)
+            except Exception as e:
+                print(e)
+
+    except er.URLError:
+        pass
+
+
 
 #Article.objects.all().delete()
 #Category.objects.all().delete()
