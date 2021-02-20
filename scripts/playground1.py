@@ -27,12 +27,19 @@ queryset = Article.objects.all().order_by('id')
 
 quant = 0 #number of articles with no publication date
 
+queryset = Article.objects.filter(language='en-US') | Article.objects.filter(language='en-GB')
+
+queryset = queryset.distinct().delete()
+
+
+'''
 for query in queryset:
     if query.published_str == 'No publication date':
         quant += 1
-
+        
 print("Total percentage of no date art-s:" + ' ' + str(100*quant/len(queryset)))
 print(len(queryset))
+'''
 '''
 last = '10000'
 ids = []

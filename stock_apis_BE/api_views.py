@@ -1,6 +1,5 @@
 import json
 import os
-
 from stock_apis import settings
 from .categories_aliases import categories_aliases
 import feedparser
@@ -19,7 +18,7 @@ from pyeda.boolalg import expr
 from pyeda.parsing.boolexpr import Error as ParseError
 from string import capwords
 from scripts.sources import shortname_sources
-
+from scripts.sources import supported_languages
 
 class ArticleList(APIView):
 
@@ -121,7 +120,6 @@ class ArticleList(APIView):
 
                     res_queryset = res_queryset | temp_queryset
 
-
             except KeyError:
                 res_queryset = \
                     queryset.filter(categories__name__contains=temp_query) | \
@@ -179,6 +177,18 @@ class ArticleList(APIView):
             return Article.objects.all().distinct()
         elif procedure == 'exclude':
             return Article.objects.none()
+
+    def get_by_languages(self, languages):
+
+        languages_list = languages.split(',')
+        queryset = Article.objects.none()
+        for language in languages_list:
+            if language is not (None or ''):
+                if language in supported_languages:
+                    queryset = queryset | Article.objects.filter(language=language)
+                else:
+                    raise Exception('Not supported language was requested')
+        return queryset.distinct()
 
     def search_by_words(self, words, field='title', procedure='include'):
         if words is not None:
@@ -284,11 +294,16 @@ class ArticleList(APIView):
         exclude_words_queryset = self.search_by_words(exclude_words_title, 'description', 'exclude')
         queryset = queryset.distinct() & Article.objects.exclude(pk__in=exclude_words_queryset.values_list('pk', flat=True)).distinct()
 
+        languages = self.request.query_params.get('languages', None)
+        if languages is not None:
+            queryset &= self.get_by_languages(languages)
+
         last = self.request.query_params.get('last', None)
+
         if last is not None:
             try:
                 ids = []
-                for query in queryset[:int(last)]:
+                for query in queryset.order_by('-published')[:int(last)]:
                     ids.append(query.id)
 
                 queryset = Article.objects.filter(id__in=ids).order_by('-published')
@@ -309,6 +324,19 @@ class ArticleList(APIView):
                 raise Exception(er)
 
 
+class SourceList(APIView):
+
+    def get(self, request):
+
+        headers = request.headers
+
+        try:
+            if headers['X-RapidAPI-Proxy-Secret'] != '856ff040-597a-11eb-80b9-8b2f9f555d46':
+                raise Exception("Invalid credentials were provided.")
+        except KeyError:
+            raise Exception("Invalid credentials were provided.")
+
+        return JsonResponse(shortname_sources)
 
 
 def articles_html(request):

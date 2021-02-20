@@ -1,4 +1,4 @@
-from scripts.sources import sources
+from scripts.sources import sources, languages
 import feedparser
 from dateutil import parser
 from django.db import IntegrityError
@@ -10,6 +10,9 @@ from stock_apis_BE.categories_aliases import categories_aliases
 
 os.chdir("..")
 sys.path.insert(0,os.path.dirname(os.path.dirname(__file__)))
+
+
+#supported_languages = languages.items()
 
 print(os.getcwd())
 os.environ['DJANGO_SETTINGS_MODULE'] = 'stock_apis.settings'
@@ -51,7 +54,7 @@ def remove_html_tags(text, open_symb, close_symb):
 
     return text
 
-def create_article(entry, website):
+def create_article(entry, website, lan):
 
     try:
         title = entry['title']
@@ -93,7 +96,7 @@ def create_article(entry, website):
         link = 'No link'
 
     try:
-        art = Article.objects.create(title=title, description=description, published=published, published_str=published_str, url=link, source=website)
+        art = Article.objects.create(title=title, description=description, published=published, published_str=published_str, url=link, source=os.path.dirname(website), language = lan)
 
         try:
             tags = entry['tags']
@@ -179,7 +182,14 @@ def check_for_updates(website):
 
         except Article.DoesNotExist:
             print("New article: " + entry['title'])
-            create_article(entry, website)
+            try:
+                lan = languages[feed['feed']['language']]
+
+
+            except KeyError:
+                lan = 'en'
+
+            create_article(entry, website, lan)
 
 
         except Exception as e:
@@ -242,7 +252,7 @@ while True:
             query.delete()
     '''
 
-    for website in sources['crypto']:
-        print(website.upper())
+    for website in sources:
+        print(website.replace('www.', '').replace('.com', '').split('/')[2].upper())
         check_for_updates(website)
 

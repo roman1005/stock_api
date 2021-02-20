@@ -39,6 +39,7 @@ class Article(models.Model):
     categories = models.ManyToManyField(Category)
     #labels = models.ManyToManyField(Label)
     source = models.CharField(max_length=200, default="No source")
+    language = models.CharField(max_length=20, default="en")
 
     def __str__(self):
         return self.title + ' ' + self.published_str

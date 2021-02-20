@@ -16,6 +16,7 @@ class ArticleSerializer(serializers.Serializer):
     categories = CategorySerializer(many=True)
     url = serializers.CharField()
     # labels = serializers.ManyToManyField(Label)
+    language = serializers.CharField()
     source = serializers.CharField()
     
     class Meta:
