@@ -1,19 +1,13 @@
 import json
-import os
-from stock_apis import settings
-from .categories_aliases import categories_aliases
-import feedparser
+from datetime import timedelta, datetime
 import requests
 from django.shortcuts import render
-from rest_framework import generics, permissions
 from .models import Article
 from rest_framework.views import APIView
 from .serializers import ArticleSerializer
-from rest_framework.response import Response
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse
 from dateutil import parser
 from .categories_aliases import categories_aliases
-from string import capwords
 from pyeda.boolalg import expr
 from pyeda.parsing.boolexpr import Error as ParseError
 from string import capwords
@@ -21,6 +15,9 @@ from scripts.sources import shortname_sources
 from scripts.sources import supported_languages
 
 class ArticleList(APIView):
+
+    period = None
+    key = '856ff040-597a-11eb-80b9-8b2f9f555d46'
 
     def pyeda_format(self, stri1):
 
@@ -170,7 +167,7 @@ class ArticleList(APIView):
                 try:
                     temp_queryset = temp_queryset | Article.objects.filter(source=shortname_sources[source])
                 except KeyError:
-                    raise Exception('Source ' + source + ' is not an provided source.' )
+                    return JsonResponse(status=400, data={'status':'400', 'message': 'Source ' + source + ' is not an provided source.'} )
 
             return temp_queryset.distinct()
         elif procedure == 'include':
@@ -187,7 +184,8 @@ class ArticleList(APIView):
                 if language in supported_languages:
                     queryset = queryset | Article.objects.filter(language=language)
                 else:
-                    raise Exception('Not supported language was requested')
+                    return JsonResponse(status=400, data={'status':'400', 'message': 'Not supported language was requested'})
+
         return queryset.distinct()
 
     def search_by_words(self, words, field='title', procedure='include'):
@@ -218,22 +216,27 @@ class ArticleList(APIView):
                             temp_queryset = temp_queryset | Article.objects.filter(description__contains=word_form)
 
             return temp_queryset.distinct()
+
         elif procedure == 'include':
             return Article.objects.all().distinct()
         elif procedure == 'exclude':
             return Article.objects.none()
 
-    def get(self, request):
+    def get(self, request, **kwargs):
+
+        try:
+            self.period = self.kwargs['period']
+        except KeyError:
+            pass
 
         headers = request.headers
 
-        '''
         try:
-            if headers['X-RapidAPI-Proxy-Secret'] != '856ff040-597a-11eb-80b9-8b2f9f555d46':
-                raise Exception("Invalid credentials were provided.")
+            if headers['X-RapidAPI-Proxy-Secret'] != self.key:
+                return JsonResponse(status=400, data={'status':'400', 'message': "Invalid credentials were provided."})
         except KeyError:
-            raise Exception("Invalid credentials were provided.")
-        '''
+            return JsonResponse(status=400, data={'status':'400', 'message': "Invalid credentials were provided."})
+
         '''
         remote_addr = request.META['REMOTE_ADDR']
         for valid_ip in settings.REST_SAFE_LIST_IPS:
@@ -241,7 +244,7 @@ class ArticleList(APIView):
             if remote_addr == valid_ip or remote_addr.startswith(valid_ip):
                 break
             else:
-                raise Exception("Not verified IP.")
+                return JsonResponse(status=400, data={'status':'400', 'message': "Not verified IP."})
         '''
 
         category = self.request.query_params.get('category', None)
@@ -252,17 +255,36 @@ class ArticleList(APIView):
         else:
             queryset = Article.objects.all()
 
-        from_date_str = self.request.query_params.get('from', None)
-        to_date_str = self.request.query_params.get('to', None)
+        if self.period == 'day' or self.period == 'week':
 
+            to_datetime_str = self.request.query_params.get('ending_at', None)
+
+            if to_datetime_str is None:
+                to_datetime = datetime.now()
+
+            else:
+                try:
+                    to_datetime = parser.parse(to_datetime_str)
+
+                except parser._parser.ParserError:
+                    return JsonResponse(status=400, data={'status':'400', 'message': "Incorrect data format was inputted"})
+
+            if self.period == 'day':
+                from_datetime = to_datetime - timedelta(days=1)
+            elif self.period == 'week':
+                from_datetime = to_datetime - timedelta(days=7)
+
+            queryset = queryset.filter(published__gte=from_datetime)
+            queryset = queryset.filter(published__lte=to_datetime)
+
+        '''
         if from_date_str is not None:
-
             try:
                 from_date = parser.parse(from_date_str)
                 queryset = queryset.filter(published__gte=from_date)
 
             except parser._parser.ParserError:
-                raise Exception("Incorrect data format was inputted")
+                return JsonResponse(status=400, data={'status':'400', 'message': "Incorrect data format was inputted"})
 
         if to_date_str is not None:
 
@@ -271,7 +293,8 @@ class ArticleList(APIView):
                 queryset = queryset.filter(published__lte=to_date)
 
             except parser._parser.ParserError:
-                raise Exception("Incorrect data format was inputted")
+                return JsonResponse(status=400, data={'status':'400', 'message': "Incorrect data format was inputted"})
+        '''
 
 
         sources = self.request.query_params.get('includeSources', None)
@@ -296,8 +319,13 @@ class ArticleList(APIView):
         queryset = queryset.distinct() & Article.objects.exclude(pk__in=exclude_words_queryset.values_list('pk', flat=True)).distinct()
 
         languages = self.request.query_params.get('languages', None)
+
         if languages is not None:
-            queryset &= self.get_by_languages(languages)
+            try:
+                result = self.get_by_languages(languages)
+                queryset &= result
+            except AttributeError:
+                return result
 
         last = self.request.query_params.get('last', None)
 
@@ -305,20 +333,29 @@ class ArticleList(APIView):
             try:
                 int_last = int(last)
                 if str(int_last) != last:
-                    raise Exception("Incorrect parameter value - you should enter only positive integer numbers.")
+                    return JsonResponse(status=400, data={'status':'400', 'message': "Incorrect parameter value - you should enter only positive integer numbers."})
             except ValueError:
-                raise Exception("Incorrect parameter value - you should enter only positive integer numbers.")
+                return JsonResponse(status=400, data={'status':'400', 'message': "Incorrect parameter value - you should enter only positive integer numbers."})
+
+            last_val = int(last)
+
             try:
                 ids = []
-                for query in queryset.order_by('-published')[:(min(int(last),100))]:
+
+                if last_val > 1000 and len(queryset) > 1000:
+                    return JsonResponse(status=400, data={'status':'400', 'message': "You can get only up to 1000 last articles for one request."})
+
+                for query in queryset.order_by('-published')[:last_val]:
                     ids.append(query.id)
+
+
             except AssertionError:
-                raise Exception("Incorrect parameter value - you should enter only positive integer numbers.")
+                return JsonResponse(status=400, data={'status':'400', 'message': "Incorrect parameter value - you should enter only positive integer numbers."})
 
             queryset = Article.objects.filter(id__in=ids).order_by('-published')
         else:
             ids = []
-            for query in queryset.order_by('-published')[:30]:
+            for query in queryset.order_by('-published')[:1000]:
                 ids.append(query.id)
             queryset = Article.objects.filter(id__in=ids).order_by('-published')
 
@@ -343,16 +380,21 @@ class SourceList(APIView):
         '''
         try:
             if headers['X-RapidAPI-Proxy-Secret'] != '856ff040-597a-11eb-80b9-8b2f9f555d46':
-                raise Exception("Invalid credentials were provided.")
+                return JsonResponse(status=400, data={'status':'400', 'message': "Invalid credentials were provided."})
         except KeyError:
-            raise Exception("Invalid credentials were provided.")
+            return JsonResponse(status=400, data={'status':'400', 'message': "Invalid credentials were provided."})
         '''
 
         return JsonResponse(shortname_sources)
 
 
-def articles_html(request):
-    api_request = request.build_absolute_uri().replace('articles/', 'v1/articles')
+def articles_html(request, **kwargs):
+    period = kwargs['period']
+    if period=='week' or period=='day':
+        api_request = request.build_absolute_uri().replace(f'articles/{period}', f'v1/articles/{period}')
+    else:
+        return JsonResponse(status=400, data={'status':'400', 'message': f"Unprovided endpoint: '{period}', should be 'week' or 'day'"})
+
     articles = json.loads(requests.get(api_request).text)['articles']
 
     context = {}

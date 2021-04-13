@@ -19,9 +19,11 @@ from django.conf.urls import url, include
 from stock_apis_BE.api_views import ArticleList, articles_html, SourceList
 
 urlpatterns = [
-    path('articles/', articles_html, name='articles'),
+    path('articles/<period>/', articles_html, name='articles'),
     url(r'', admin.site.urls),
     path('admin/', admin.site.urls),
+    path('v1/articles/week/', ArticleList.as_view(), {'period': 'week'}),
+    path('v1/articles/day/', ArticleList.as_view(), {'period': 'day'}),
     path('v1/articles/', ArticleList.as_view()),
     path('v1/sources/all/', SourceList.as_view())
 ]
